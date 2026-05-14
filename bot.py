@@ -15,7 +15,7 @@ from PIL import (
 
 import os
 
-TOKEN = "8973471986:AAEOSnNUpGkYM6lMNYGyi3kLgCdyDnM4Gik"
+TOKEN = os.getenv("TOKEN")
 
 user_images = {}
 
