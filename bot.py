@@ -25,7 +25,7 @@ user_images = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
-        "📸 Send me 1-8 images.\n"
+        "📸 Send me 1-16 images.\n"
         "Use /done to create collage.\n"
         "Use /clear to remove uploaded images."
     )
@@ -87,11 +87,11 @@ async def handle_photo(
     if user_id not in user_images:
         user_images[user_id] = []
 
-    # max 8 images
-    if len(user_images[user_id]) >= 20:
+    # max 16 images
+    if len(user_images[user_id]) >= 16:
 
         await update.message.reply_text(
-            "⚠️ Maximum 8 images allowed."
+            "⚠️ Maximum 16 images allowed."
         )
 
         return
@@ -116,8 +116,7 @@ async def handle_photo(
     user_images[user_id].append(path)
 
     await update.message.reply_text(
-        f"✅ Image added "
-        f"({len(user_images[user_id])}/8)"
+        f"✅ Image added ({len(user_images[user_id])}/16)"
     )
 
 # =========================
@@ -134,25 +133,22 @@ async def make_collage(
         for x in user_images[user_id]
     ]
 
-    target_size = (250, 500)
+    # Better size for 16-image collages
+    target_size = (200, 400)
 
     processed = []
 
-    # process images
     for img in images:
 
-        # crop properly
         img = ImageOps.fit(
             img,
             target_size,
             Image.Resampling.LANCZOS
         )
 
-        # sharpen
         sharpness = ImageEnhance.Sharpness(img)
         img = sharpness.enhance(1.5)
 
-        # contrast
         contrast = ImageEnhance.Contrast(img)
         img = contrast.enhance(1.1)
 
@@ -160,34 +156,37 @@ async def make_collage(
 
     n = len(processed)
 
-    # dynamic layout
+    # Dynamic layout
     if n == 1:
         cols, rows = 1, 1
 
     elif n == 2:
         cols, rows = 2, 1
 
-    elif n == 3:
-        cols, rows = 3, 1
-
-    elif n == 4:
+    elif n <= 4:
         cols, rows = 2, 2
 
     elif n <= 6:
         cols, rows = 3, 2
 
+    elif n <= 9:
+        cols, rows = 3, 3
+
+    elif n <= 12:
+        cols, rows = 4, 3
+
     else:
-        cols, rows = 4, 2
+        cols, rows = 4, 4
 
     collage = Image.new(
         "RGB",
         (
             cols * target_size[0],
             rows * target_size[1]
-        )
+        ),
+        (255, 255, 255)
     )
 
-    # paste images directly
     for i, img in enumerate(processed):
 
         x = (i % cols) * target_size[0]
@@ -208,7 +207,7 @@ async def make_collage(
         document=open(output, "rb")
     )
 
-    # cleanup
+    # Cleanup
     for file in user_images[user_id]:
 
         if os.path.exists(file):
@@ -228,7 +227,6 @@ app = (
     .build()
 )
 
-# commands
 app.add_handler(
     CommandHandler("start", start)
 )
@@ -241,7 +239,6 @@ app.add_handler(
     CommandHandler("clear", clear)
 )
 
-# image handler
 app.add_handler(
     MessageHandler(
         filters.PHOTO | filters.Document.IMAGE,
