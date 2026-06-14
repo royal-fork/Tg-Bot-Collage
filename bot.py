@@ -88,7 +88,7 @@ async def handle_photo(
         user_images[user_id] = []
 
     # max 8 images
-    if len(user_images[user_id]) >= 8:
+    if len(user_images[user_id]) >= 20:
 
         await update.message.reply_text(
             "⚠️ Maximum 8 images allowed."
